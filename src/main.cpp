@@ -171,6 +171,6 @@ void loop()
 
   if (digitalRead(PC13) == LOW)
   {
-    client.publish(mqtt_door, "Manually open the door...");
+    client.publish(mqtt_door, "#close");
   }
 }
