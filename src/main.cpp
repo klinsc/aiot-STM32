@@ -18,15 +18,16 @@
 #include <PubSubClient.h>
 
 // Update these with values suitable for your network.
-char ssid[] = "Boom AIS2.4G";
+char ssid[] = "Klinsc";
 const char *password = "11111111";
 const char *mqtt_server = "broker.hivemq.com";
+const char *mqtt_door = "/19c21604/door";
 
+// Initialize the Ethernet client object
 SPIClass SPI_3(PC12, PC11, PC10);
 WiFiClass WiFi(&SPI_3, PE0, PE1, PE8, PB13);
 WiFiClient STClient;
 int status = WL_IDLE_STATUS; // the Wifi radio's status
-
 PubSubClient client(STClient);
 long lastMsg = 0;
 char msg[50];
@@ -69,16 +70,18 @@ void setup_wifi()
       // Connect to WPA (TKIP) network:
       status = WiFi.begin(ssid, password, ES_WIFI_SEC_WPA);
     }
-    // wait 10 seconds for connection:
-    delay(10000);
+    // wait 3 seconds for connection:
+    delay(3000);
   }
 
   Serial.println();
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+  digitalWrite(PC9, HIGH);
 }
 
+// callback function for the MQTT client
 void callback(char *topic, byte *payload, unsigned int length)
 {
   Serial.print("Message arrived [");
@@ -96,42 +99,23 @@ void callback(char *topic, byte *payload, unsigned int length)
 
   Serial.println(message);
 
-  // Switch on the LED if an 1 was received as first character
-  if (message[0] == '1')
-  {
-    digitalWrite(PA5, HIGH); // Turn the LED on
-  }
-  else
-  {
-    digitalWrite(PA5, LOW); // Turn the LED off
-  }
-
   // If payload message is "#on", turn the LED on
   if (message == "#on")
   {
-    Serial.println("Turning the LED on");
-    digitalWrite(PA5, HIGH);
+    Serial.println("Open the door");
+    digitalWrite(PA5, LOW);
+    digitalWrite(PB14, HIGH);
   }
   // If payload message is "#off", turn the LED off
   if (message == "#off")
   {
-    Serial.println("Turning the LED off");
-    digitalWrite(PA5, LOW);
+    Serial.println("Close the door");
+    digitalWrite(PA5, HIGH);
+    digitalWrite(PB14, LOW);
   }
 }
 
-void setup()
-{
-  // if press the button, send a message to the server
-  pinMode(PC13, INPUT_PULLUP);
-
-  pinMode(PA5, OUTPUT); // Initialize the LED_BUILTIN pin as an output
-  Serial.begin(115200);
-  setup_wifi();
-  client.setServer(mqtt_server, 1883);
-  client.setCallback(callback);
-}
-
+// reconnect to the MQTT server
 void reconnect()
 {
   // Loop until we're reconnected
@@ -144,7 +128,7 @@ void reconnect()
       Serial.println("connected");
 
       // ... and resubscribe
-      client.subscribe("/ict792/message");
+      client.subscribe(mqtt_door);
     }
     else
     {
@@ -156,6 +140,23 @@ void reconnect()
     }
   }
 }
+
+// initialize the system
+void setup()
+{
+  pinMode(PA5, OUTPUT);  // Initialize the LED_BUILTIN pin as an output
+  pinMode(PB14, OUTPUT); // Initialize the LED_BUILTIN pin as an output
+
+  pinMode(PC13, INPUT_PULLUP); // if press the button toggle the LED
+
+  pinMode(PA5, OUTPUT);
+  Serial.begin(115200);
+  setup_wifi();
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
+}
+
+// main loop after initialization
 void loop()
 {
   if (!client.connected())
@@ -166,6 +167,25 @@ void loop()
 
   if (digitalRead(PC13) == LOW)
   {
-    client.publish("/ict792/message", "this is 💣Boom pressing!");
+    client.publish(mqtt_door, "this is 💣Boom pressing!");
   }
 }
+
+//   // blink the LED_BUILTIN every 2 seconds
+//   long now = millis();
+//   if (now - lastMsg > 2000)
+//   {
+//     lastMsg = now;
+//     ++value;
+//     // turn the LED on (HIGH is the voltage level)
+//     digitalWrite(PA5, HIGH); // near LED
+//     digitalWrite(PB14, HIGH); // far LED
+//     digitalWrite(PC9, HIGH); // Wifi or Bluetooth LED
+//     // wait for a second
+//     delay(1000);
+//     // turn the LED off by making the voltage LOW
+//     digitalWrite(PA5, LOW);
+//     digitalWrite(PB14, LOW);
+//     digitalWrite(PC9, LOW); // Wifi or Bluetooth LED
+//   }
+// }
