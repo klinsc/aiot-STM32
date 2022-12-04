@@ -22,6 +22,7 @@ char ssid[] = "Klinsc";
 const char *password = "11111111";
 const char *mqtt_server = "broker.hivemq.com";
 const char *mqtt_door = "/19c21604/door";
+const char *mqtt_loading = "/19c21604/loading";
 
 // Initialize the Ethernet client object
 SPIClass SPI_3(PC12, PC11, PC10);
@@ -100,18 +101,20 @@ void callback(char *topic, byte *payload, unsigned int length)
   Serial.println(message);
 
   // If payload message is "#on", turn the LED on
-  if (message == "#on")
+  if (message == "#open")
   {
     Serial.println("Open the door");
     digitalWrite(PA5, LOW);
     digitalWrite(PB14, HIGH);
+    client.publish(mqtt_loading, "false");
   }
   // If payload message is "#off", turn the LED off
-  if (message == "#off")
+  if (message == "#close")
   {
     Serial.println("Close the door");
     digitalWrite(PA5, HIGH);
     digitalWrite(PB14, LOW);
+    client.publish(mqtt_loading, "false");
   }
 }
 
@@ -167,7 +170,7 @@ void loop()
 
   if (digitalRead(PC13) == LOW)
   {
-    client.publish(mqtt_door, "this is 💣Boom pressing!");
+    client.publish(mqtt_door, "Manually open the door...");
   }
 }
 
