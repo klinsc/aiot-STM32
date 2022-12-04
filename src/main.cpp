@@ -164,6 +164,7 @@ void loop()
 {
   if (!client.connected())
   {
+    Serial.println("Disconnected");
     reconnect();
   }
   client.loop();
@@ -173,22 +174,3 @@ void loop()
     client.publish(mqtt_door, "Manually open the door...");
   }
 }
-
-//   // blink the LED_BUILTIN every 2 seconds
-//   long now = millis();
-//   if (now - lastMsg > 2000)
-//   {
-//     lastMsg = now;
-//     ++value;
-//     // turn the LED on (HIGH is the voltage level)
-//     digitalWrite(PA5, HIGH); // near LED
-//     digitalWrite(PB14, HIGH); // far LED
-//     digitalWrite(PC9, HIGH); // Wifi or Bluetooth LED
-//     // wait for a second
-//     delay(1000);
-//     // turn the LED off by making the voltage LOW
-//     digitalWrite(PA5, LOW);
-//     digitalWrite(PB14, LOW);
-//     digitalWrite(PC9, LOW); // Wifi or Bluetooth LED
-//   }
-// }
